@@ -413,7 +413,7 @@ class _ShowcaseState extends State<Showcase> {
           return buildOverlayOnTarget(offset, rectBound.size, rectBound, size);
         },
         showOverlay: true,
-        child: widget.disableTargetGesturesWhenShown
+        child: widget.disableTargetGesturesWhenShown && _showShowCase
             ? GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _getOnTargetTap,
@@ -422,10 +422,7 @@ class _ShowcaseState extends State<Showcase> {
                 // avoid scroll when long press on an [InkWell]
                 onHorizontalDragStart: (_) => _getOnTargetTap(),
                 onVerticalDragStart: (_) => _getOnTargetTap(),
-                child: AbsorbPointer(
-                  absorbing: _showShowCase,
-                  child: widget.child,
-                ),
+                child: AbsorbPointer(absorbing: true, child: widget.child),
               )
             : widget.child,
       );
