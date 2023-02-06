@@ -190,6 +190,13 @@ class Showcase extends StatefulWidget {
   /// if `disableDefaultTargetGestures` is set to false.
   final bool disableDefaultTargetGestures;
 
+  /// if `disableTargetGesturesWhenShown` parameter is true
+  /// the [child] widget won't be triggered by any action when
+  /// the tooltip overlay is shown.
+  ///
+  /// Defaults to `false`.
+  final bool disableTargetGesturesWhenShown;
+
   /// Defines blur value.
   /// This will blur the background while displaying showcase.
   ///
@@ -267,6 +274,7 @@ class Showcase extends StatefulWidget {
     this.onTargetDoubleTap,
     this.tooltipBorderRadius,
     this.disableDefaultTargetGestures = false,
+    this.disableTargetGesturesWhenShown = false,
     this.scaleAnimationDuration = const Duration(milliseconds: 300),
     this.scaleAnimationCurve = Curves.easeIn,
     this.scaleAnimationAlignment,
@@ -308,6 +316,7 @@ class Showcase extends StatefulWidget {
     this.onTargetLongPress,
     this.onTargetDoubleTap,
     this.disableDefaultTargetGestures = false,
+    this.disableTargetGesturesWhenShown = false,
     this.tooltipPosition,
   })  : showArrow = false,
         onToolTipClick = null,
@@ -348,6 +357,8 @@ class _ShowcaseState extends State<Showcase> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _enableShowcase = showCaseWidgetState.enableShowcase;
+    final activeStep = ShowCaseWidget.activeTargetWidget(context);
+    _showShowCase = activeStep == widget.key;
 
     if (_enableShowcase) {
       position ??= GetPosition(
@@ -362,12 +373,7 @@ class _ShowcaseState extends State<Showcase> {
 
   /// show overlay if there is any target widget
   void showOverlay() {
-    final activeStep = ShowCaseWidget.activeTargetWidget(context);
-    setState(() {
-      _showShowCase = activeStep == widget.key;
-    });
-
-    if (activeStep == widget.key) {
+    if (_showShowCase) {
       if (showCaseWidgetState.enableAutoScroll) {
         _scrollIntoView();
       }
@@ -407,7 +413,21 @@ class _ShowcaseState extends State<Showcase> {
           return buildOverlayOnTarget(offset, rectBound.size, rectBound, size);
         },
         showOverlay: true,
-        child: widget.child,
+        child: widget.disableTargetGesturesWhenShown
+            ? GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _getOnTargetTap,
+                onDoubleTap: widget.onTargetDoubleTap,
+                onLongPress: widget.onTargetLongPress,
+                // avoid scroll when long press on an [InkWell]
+                onHorizontalDragStart: (_) => _getOnTargetTap(),
+                onVerticalDragStart: (_) => _getOnTargetTap(),
+                child: AbsorbPointer(
+                  absorbing: _showShowCase,
+                  child: widget.child,
+                ),
+              )
+            : widget.child,
       );
     }
     return widget.child;
